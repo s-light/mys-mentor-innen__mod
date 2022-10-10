@@ -1,36 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="description" content="test postMessage iframe interactions with greasmonkey">
+   <meta name="description" content="test postMessage iframe interactions with greasmonkey">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <title>main - iframe greasmonkey tests</title>
+    <title>client - iframe greasmonkey tests</title>
+    <script type="text/javascript">
+        // online at
+        // https://jsbin.com/zatagic/5/edit?html,css,js,output
+        // view
+        // https://output.jsbin.com/zatagic/
+    </script>
     <style media="screen">
     body {
         background-color:black;
         color:orange;
     }
-
-    .placeholder {
-        height: 30vh;
-        width: 100%;
-        border: solid 1px lime;
-    }
-
-
-    #request_frame {
-        width: 99%;
-        min-height: 97%;
-    }
     </style>
     <script type="text/javascript">
     function ping() {
         window.top.postMessage('PING');
-        add_log('send "PING" to top level window...');
+        add_log('send ping to top level window...');
     }
 
     window.addEventListener ("message", (event) => {
-        console.log('main - message', event);
+        console.log('client - message', event);
     });
 
     function add_log(message) {
@@ -44,13 +38,11 @@
     </script>
 </head>
 <body>
-    <h2>main - iframe greasmonkey tests</h2>
-    <div class="placeholder">
-        .
-    </div>
-    <div class="placeholder_button">
-        .
-    </div>
+    <h2>client - iframe greasmonkey tests</h2>
+    <button onclick="ping();">
+        Ping
+    </button>
+
     <div>
         <h2>
             Log entries:
