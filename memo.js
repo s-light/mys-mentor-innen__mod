@@ -1,47 +1,28 @@
-// ==UserScript==
-// @name     test gm and iframe interaction
-// @version  0.3.0
-// @grant    none
-// @namespace   https://github.com/s-light
-// @match https://s-light.github.io/mys-mentor-innen__mod/main.html
-// ==/UserScript==
+// alternative way:
+// https://stackoverflow.com/a/69466883/574981
+// access VUE instance directly
+// const app = document.querySelector('[app-data]').__vue__;
+// or saver way
+// const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue__).__vue__
+// const state = app.$store.state
+// if ever switched to VUE3 use
+// const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue_app__).__vue_app__
+// const state = app.config.globalProperties.$store.state
 
-// console.clear();
-// console.info('******************************************');
-// window.addEventListener('load', (event) => {
-//      console.info('All resources finished loading!', event);
-window.addEventListener('load', () => {
-    // console.info('All resources finished loading.');
-    start_main_script();
-});
+// more on vuex store debugging
+// https://www.damianmullins.com/logging-vuex-actions-and-mutations-in-the-wild/
 
-const target_url = 'https://s-light.eu/dev_tests/iframe_tests/client.html';
-// let request_frame = https://s-light.github.io/mys-mentor-innen__mod/main.html;
-
-function start_main_script() {
-    try {
-        console.info(
-            '******************************************' + '\n' +
-            'test gm and iframe interaction'
-        );
-        console.log('location.host', location.host);
-        prepare_iframe();
-        add_main_eventListener();
-    } catch (e) {
-        console.error(e);
-    } finally {
-        console.info(
-            'all user scripting done.\n' +
-            '******************************************'
-        );
-    }
-}
+// find all hackdays
+// for (const hd_id of state.appointment.allIds) {console.log(state.appointment.byId[hd_id])}
 
 
-function add_main_eventListener() {
+// maybe use this to manipulate data table?
+// https://forum.vuejs.org/t/innerhtml-compilation-vue-2/8780/8?u=s-light
+
+
     // setup iframe message handler
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-    window.addEventListener ('message', (event) => {
+    window.addEventListener ("message", (event) => {
         console.log('main - event', event);
         console.log('main - event.origin', event.origin);
         // Do we trust the sender of this message?
@@ -96,33 +77,34 @@ function add_main_eventListener() {
     //         // }
     //     });
     // }
-}
 
 
+//
+// function add_search_button(parent) {
+//     console.info('add_search_button...');
+//     const button_el = create_search_button(prepare_hackdays);
+//     const table_el = document.querySelector(".v-data-table");
+//     table_el.before(button_el);
+// }
 
-function request_frame_message_received(event) {
-    console.log('request_frame_message_received', event);
-}
 
-
-
-
-// ******************************************
-// Frame scripts
-
-function prepare_iframe() {
-    console.info('prepare_iframe...');
-    const main__wrap_el = document.querySelector(".placeholder");
-    const el = document.createElement('iframe');
-    el.id = 'request_frame';
-    el.classList.add('request_frame');
-    el.addEventListener('load', (event) => {
-        console.log('frame load event fired.', event, el);
-        start_frame_script(el.contentWindow, el.contentDocument);
-    });
-    el.src = target_url;
-    main__wrap_el.appendChild(el);
-}
+    console.log('post message...');
+    request_frame.contentWindow.postMessage('PING', "*");
+    console.log('post message - done.');
+    // .then(htmlDocConnection => {
+    //     console.log('htmlDocConnection', htmlDocConnection);
+    //     console.log('title', htmlDocConnection.title);
+    //     // debug_out.appendChild(htmlDocConnection);
+    //     // ^ --> fails with `Node.appendChild: May not add a Document as a child`
+    //     try {
+    //         request_frame.contentWindow.document = htmlDocConnection;
+    //     } catch (e) {
+    //         console.error(e);
+    //     }
+    //     //search_connection__fill(htmlDoc, search_options);
+    //     const duration = htmlDocConnection.querySelector('.connectionData .conTimeChanges .duration');
+    //     console.log('duration', duration);
+    // });
 
 function start_frame_script(frame_window, frame_document) {
     console.info(
@@ -136,12 +118,12 @@ function start_frame_script(frame_window, frame_document) {
     try {
         // following fails do to
         // DOMException: Permission denied to access property "addEventListener" on cross-origin object
-        console.log('frame_window.addEventListener ("message", (event)...');
-        frame_window.addEventListener("message", (event) => {
-            console.log('frame_window - event', event);
-        });
+        //console.log('frame_window.addEventListener ("message", (event)...');
+        //frame_window.addEventListener("message", (event) => {
+        //    console.log('frame_window - event', event);
+        //});
     } catch (e) {
-        console.warn('frame_window.addEventListener', e);
+        console.warn('', e);
     }
     try {
         console.log('frame_window.window.addEventListener ("message", (event)...');
@@ -164,77 +146,3 @@ function start_frame_script(frame_window, frame_document) {
     frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
     console.info('frame - init script done.\n\n');
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ******************************************
-// UTILITIES
-
-
-// https://stackoverflow.com/a/58332058/574981
-function createPromiseFromDomEvent (eventTarget, eventName, run) {
-    new Promise((resolve, reject) => {
-        const handleEvent = () => {
-            eventTarget.removeEventListener(eventName, handleEvent);
-
-            resolve();
-        };
-        eventTarget.addEventListener(eventName, handleEvent);
-        try {
-            if (run) run();
-        } catch (err) {
-            reject(err);
-        }
-    });
-}
-// usage
-// await createPromiseFromDomEvent(
-//     sourceBuffer,
-//     'update',
-//     () => sourceBuffer.remove(3, 10)
-// );
-
-
-
-// function prepaire_for_run_this_fiddle() {
-// 	var run_button = document.querySelector('#click-to-run .ctrCont');
-//   console.log('run_button', run_button);
-// 	run_button.addEventListener ('click', (event) => {
-//         console.log('click to run fired. :-)', event);
-//         setTimeout(() => {
-//           console.log('start_main_script()...');
-//           start_main_script();
-//         }, 5000);
-//   });
-//   console.log('prepaire_for_run_this_fiddle done.');
-// }

@@ -1,1 +1,1 @@
-Header set X-Frame-Options "ALLOW-FROM URL https://s-light.github.io/*"
+Header set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://s-light.eu/ https://s-light.github.io/;frame-ancestors 'self' https://s-light.github.io/;"
