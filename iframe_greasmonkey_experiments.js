@@ -121,7 +121,10 @@ function prepare_iframe() {
     const main__wrap_el = document.querySelector(".placeholder");
     const el = document.createElement('iframe');
     el.id = 'request_frame';
+    el.name="request_frame"
     el.classList.add('request_frame');
+    el.sandbox="allow-modals allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts";
+    el.allow="geolocation; midi; camera; microphone; speaker;";
     el.addEventListener('load', (event) => {
         console.log('frame load event fired.', event, el);
         start_frame_script(el.contentWindow, el.contentDocument);

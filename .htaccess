@@ -1,0 +1,1 @@
+Header set X-Frame-Options "ALLOW-FROM URL https://s-light.github.io/*"

@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <meta name="description" content="test postMessage iframe interactions with greasmonkey">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#values -->
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="
+            default-src 'self' 'unsafe-inline' 'unsafe-eval';
+            frame-src https://s-light.github.io/;
+        "
+    />
+    <meta name="description" content="test postMessage iframe interactions with greasmonkey">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>client - iframe greasmonkey tests</title>
