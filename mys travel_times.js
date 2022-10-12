@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name     MYS bahn.de - travel times
+// @name     MYS & bahn.de - travel times
 // @version  0.3.0
 // @grant    none
 // @namespace   https://github.com/s-light
+// @require   https://s-light.github.io/mys-mentor-innen__mod/tools.js
 // @match https://prod.mys-mentor-innen.de/mentor/*
 // @match https://reiseauskunft.bahn.de/*
 // ==/UserScript==
@@ -184,7 +185,7 @@ function prepare_iframe() {
     el.classList.add('request_frame');
     el.addEventListener('load', (event) => {
         console.log('frame load event fired.', event, el);
-        start_frame_script(el.contentWindow, el.contentDocument);
+        // start_frame_script(el.contentWindow, el.contentDocument);
     });
     el.src = target_url;
     main__wrap_el.appendChild(el);
@@ -210,148 +211,7 @@ function start_frame_script(frame_window, frame_document) {
     } catch (e) {
         console.warn(e);
     }
-
-
     // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
     // frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
     console.info('frame - init script done.\n\n');
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ******************************************
-// UTILITIES
-
-
-// https://stackoverflow.com/a/58332058/574981
-function createPromiseFromDomEvent (eventTarget, eventName, run) {
-    new Promise((resolve, reject) => {
-        const handleEvent = () => {
-            eventTarget.removeEventListener(eventName, handleEvent);
-
-            resolve();
-        };
-        eventTarget.addEventListener(eventName, handleEvent);
-        try {
-            if (run) run();
-        } catch (err) {
-            reject(err);
-        }
-    });
-}
-// usage
-// await createPromiseFromDomEvent(
-//     sourceBuffer,
-//     'update',
-//     () => sourceBuffer.remove(3, 10)
-// );
-
-
-function get_vue_app_instance(doc) {
-    let app = null;
-    try {
-        // const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue__).__vue__;
-        const doc_all_el = doc.querySelectorAll('*');
-        console.log('doc_all_el', doc_all_el);
-        console.log('Array.from', Array.from);
-        console.log('Array.find', Array.find);
-        const doc_all_el_array = Array.from(doc_all_el);
-        console.log('doc_all_el_array', doc_all_el_array);
-        const find_result = doc_all_el_array.find(e => e.__vue__);
-        console.log('find_result', find_result);
-        app = find_result.__vue__;
-        console.log('vue.js app', app);
-    } catch (e) {
-        console.warn(e);
-    }
-    try {
-        app = doc.querySelector('[app-data]').__vue__;
-        console.log('doc.querySelector("[app-data]").__vue__', app);
-    } catch (e) {
-        console.warn(e);
-    }
-    if (!app) {
-        console.warn('app instance not found.', e);
-    }
-    return app;
-}
-
-
-
-function parse_date(date_string) {
-    //console.log('parse_date', date_string);
-    //const RegExpNamedCaptureGroups = /(?<year>[0-9]{4})-(?<month>[0-9]{2})-(?<day>[0-9]{2})/
-    const RegExpNamedCaptureGroups = /(?<day>[0-9]{2}).(?<month>[0-9]{2}).(?<year>[0-9]{4})/;
-    const reResult = RegExpNamedCaptureGroups.exec(date_string);
-    //console.log(reResult);
-    const date = new Date(
-        reResult.groups.year,
-        // monthIndex = month - 1
-        reResult.groups.month - 1,
-        reResult.groups.day
-    );
-    return date
-}
-
-
-
-function add_styles(styles_string) {
-    let head = document.querySelector('head');
-    if (head) {
-        const el_style = document.createElement('style');
-        el_style.type = 'text/css';
-        el_style.type = 'text/css';
-        el_style.textContent = styles_string;
-        head.appendChild(el_style);
-    }
-}
-
-function add_css() {
-    console.groupCollapsed('add_css');
-    let modstyles = `
-    /* ***** css tweaks ***** */
-    .request_frame {
-        display: block;
-        position: absolute;
-        right: 0;
-        z-index: 200;
-        width: 20vw;
-        height: 20vw;
-        top: 0;
-        background: hsla(191.3, 42.1%, 22.4%, 0.11);
-    }
-    /* ***** css tweaks end ***** */
-    `;
-    add_styles(modstyles);
-    console.groupEnd();
 }

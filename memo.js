@@ -146,3 +146,37 @@ function start_frame_script(frame_window, frame_document) {
     frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
     console.info('frame - init script done.\n\n');
 }
+
+
+
+
+
+
+function get_vue_app_instance(doc) {
+    let app = null;
+    try {
+        // const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue__).__vue__;
+        const doc_all_el = doc.querySelectorAll('*');
+        console.log('doc_all_el', doc_all_el);
+        console.log('Array.from', Array.from);
+        console.log('Array.find', Array.find);
+        const doc_all_el_array = Array.from(doc_all_el);
+        console.log('doc_all_el_array', doc_all_el_array);
+        const find_result = doc_all_el_array.find(e => e.__vue__);
+        console.log('find_result', find_result);
+        app = find_result.__vue__;
+        console.log('vue.js app', app);
+    } catch (e) {
+        console.warn(e);
+    }
+    try {
+        app = doc.querySelector('[app-data]').__vue__;
+        console.log('doc.querySelector("[app-data]").__vue__', app);
+    } catch (e) {
+        console.warn(e);
+    }
+    if (!app) {
+        console.warn('app instance not found.', e);
+    }
+    return app;
+}

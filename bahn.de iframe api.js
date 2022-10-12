@@ -4,6 +4,7 @@
 // @grant    none
 // @allFrames true
 // @namespace   https://github.com/s-light
+// @require   https://s-light.github.io/mys-mentor-innen__mod/tools.js
 // @match https://reiseauskunft.bahn.de/*
 // ==/UserScript==
 
@@ -27,7 +28,7 @@ function start_main_script() {
         'bahn.de iframe api'
     );
     console.log('location.host', location.host);
-    console.log('window.top == window.self', window.top === window.self);
+    console.log('window.top === window.self', window.top === window.self);
     // add_css();
     // setup iframe message handler
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
