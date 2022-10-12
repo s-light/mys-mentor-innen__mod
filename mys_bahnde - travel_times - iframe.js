@@ -4,6 +4,7 @@
 // @grant    none
 // @namespace   https://github.com/s-light
 // @match https://prod.mys-mentor-innen.de/mentor/*
+// @match https://reiseauskunft.bahn.de/*
 // ==/UserScript==
 
 
@@ -207,16 +208,12 @@ function start_frame_script(frame_window, frame_document) {
         //});
         console.log('search for elements', frame_window.querySelector(''));
     } catch (e) {
-        console.warn('', e);
+        console.warn(e);
     }
 
 
-    // console.log("start_frame_script - frame_window.postMessage - PING FROM FRAME!!");
-    // frame_window.postMessage("start_frame_script - frame_window.postMessage - PING FROM FRAME!!");
-    // console.log("start_frame_script - frame_window.window.postMessage - PING FROM FRAME!!");
-    // frame_window.window.postMessage("start_frame_script - frame_window.window.postMessage - PING FROM FRAME!!");
-    console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
-    frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
+    // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
+    // frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
     console.info('frame - init script done.\n\n');
 }
 
