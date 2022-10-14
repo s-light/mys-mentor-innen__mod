@@ -14,7 +14,7 @@
 
 
 const base_url = 'https://prod.mys-mentor-innen.de/mentor/*';
-const target_url = 'https://reiseauskunft.bahn.de/';
+const target_url = 'https://reiseauskunft.bahn.de';
 
 
 try {
@@ -50,18 +50,18 @@ function setup_message_receive() {
     window.addEventListener("message", (event) => {
         // console.log('event', event);
         // console.log('event.origin', event.origin);
-        console.info(
-            `message event:
-            event.origin: '${event.origin}'
-            event.data:`,
-            event.data
-        );
+        // console.info(
+        //     `message event:
+        //     event.origin: '${event.origin}'
+        //     event.data:`,
+        //     event.data
+        // );
         // Do we trust the sender of this message?
-        console.log('event.origin', event.origin);
-        console.log('target_url', target_url);
-        console.log('event.origin == target_url', event.origin == target_url);
+        // console.log('event.origin', event.origin);
+        // console.log('target_url', target_url);
+        // console.log('event.origin == target_url', event.origin == target_url);
         if (event.origin == target_url) {
-            console.log('event', event);
+            // console.log('event', event);
             message_received(event);
         }
     });

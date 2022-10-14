@@ -142,7 +142,9 @@ function req_search_connection(data) {
 
 
 function send_current_data() {
-    const data = collect_current_data(document);
+    const data = {
+        data: collect_current_data(document)
+    };
     console.log('data', data);
     const post_result = window.top.postMessage(data, '*');
     console.log('message posted.');
