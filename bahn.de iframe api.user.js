@@ -22,6 +22,10 @@ try {
 }
 
 
+// const source_url_list = [
+//     'https://prod.mys-mentor-innen.de',
+// ];
+const source_url = 'https://prod.mys-mentor-innen.de';
 const target_url = 'https://reiseauskunft.bahn.de/';
 
 function setup_bahn_de_iframe_api() {
@@ -32,27 +36,8 @@ function setup_bahn_de_iframe_api() {
     console.log('location.host', location.host);
     console.log('window.top === window.self', window.top === window.self);
     // add_css();
-    // setup iframe message handler
-    // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-    window.addEventListener ("message", (event) => {
-        console.log('event', event);
-        console.log('event.origin', event.origin);
-        // Do we trust the sender of this message?
-        if (event.origin === target_url) {
-            request_received(event);
-            // event.source is window.opener
-            // event.data is "hello there!"
-            // Assuming you've verified the origin of the received message (which
-            // you must do in any case), a convenient idiom for replying to a
-            // message is to call postMessage on event.source and provide
-            // event.origin as the targetOrigin.
-            // event.source.postMessage(
-            //     "hi there yourself!  the secret response is: rheeeeet!",
-            //     event.origin
-            // );
-            // request_frame_message_received
-        }
-    });
+    window.top.postMessage('PING from frame *.', '*');
+    setup_message_receive();
     send_current_data();
     console.info(
         'all user scripting done.\n' +
@@ -61,8 +46,90 @@ function setup_bahn_de_iframe_api() {
 }
 
 
-function request_received(event) {
-    console.log('request_received', event);
+
+function setup_message_receive() {
+    // setup iframe message handler
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#examples
+    window.addEventListener ("message", (event) => {
+        console.log('event', event);
+        console.log('event.origin', event.origin);
+        console.log('event.source', event.source);
+        console.log('window.opener', window.opener);
+        // Do we trust the sender of this message?
+        if (
+            (event.origin === source_url)
+            // (source_url_list.includes(event.origin))
+            // && (event.source === window.opener) →  null for our dynamically created iframe...
+        ) {
+            message_received(event);
+            // a convenient idiom for replying to a message is to
+            // call postMessage on event.source and
+            // provide event.origin as the targetOrigin.
+            // event.source.postMessage(
+            //     "hi yourself! response is: rheeeeet!",
+            //     event.origin
+            // );
+        }
+    });
+}
+
+function message_received(event) {
+    console.log('message_received', event);
+    try {
+        const event_data = event.data;
+        console.log('event_data', event_data);
+        const message_type = event_data.data.type;
+        console.log('message_type', message_type);
+        const message_data = event_data.data.data;
+        console.log('message_data', message_data);
+        switch (message_type) {
+            case 'search_connection':
+                req_search_connection(message_data)
+                break;
+            default:
+                console.warn(`request ' ${message_type}' not implemented.`);
+        }
+    } catch (e) {
+        console.warn('request malformed.', e);
+    }
+}
+
+function req_search_connection(data) {
+    console.log('req_search_connection', data);
+    console.log('fill form:');
+    for (const key of Object.keys(data.form_fill)) {
+        console.log(`fill '${key}'`);
+        try {
+            const el = document.querySelector(`[name=${key}]`);
+            if (el) {
+                el.value = data.form_fill[key];
+            } else {
+                console.warn(`form_fill input '${key}' not found. ignoring.`);
+            }
+        } catch (e) {
+            console.warn(`form_fill failed on input '${key}': `, e);
+        }
+    }
+    // send form
+    try {
+        console.log(`send form..`);
+        // document.querySelector('[name=start]').click();
+        const submit_button = document.querySelector('[name=start]');
+        const click_result = submit_button.click();
+        console.log('click_result', click_result);
+
+        // does not work.
+        // document.querySelector('[name=formular]').submit();
+        // or
+        // submitQuery();
+
+        // this reloads the page.
+        // so the send_current_data will get triggered..
+        // hopefully with the results ;-)
+    } catch (e) {
+        console.warn(`form_fill submit failed`, e);
+    }
+    console.log(`done.`);
 }
 
 
@@ -76,44 +143,52 @@ function request_received(event) {
 
 function send_current_data() {
     const data = collect_current_data(document);
-    // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
-    const message_obj = {
-        'type': 'connection_data',
-        'data': data
-    };
-    console.log('message_obj', message_obj);
-    const message_data = JSON.stringify(message_obj);
-    window.top.postMessage(message_data);
+    console.log('data', data);
+    const post_result = window.top.postMessage(data, '*');
+    console.log('message posted.');
+    // const message_data_text = JSON.stringify(message_obj);
+    // window.top.postMessage(message_data_text);
 }
 
 function collect_current_data() {
     console.log('collect_current_data');
     const data = {
-        'title': get_value_from_element('title'),
-        'query_result': null,
-        'data': null,
+        'type': 'connection_data',
+        'data': {
+            'title': get_value_from_element('title'),
+            'data': null,
+        }
     };
-    if (data.title.includes('Auskunft')) {
-        data.query_result = true;
-        data.data = collect_connection_result_data();
-    } else if (data.title.includes('Anfrage')) {
-        data.query_result = false;
-        data.data = collect_connection_request_data();
+    if (data.data.title.includes('Auskunft')) {
+        data.type = 'connection_data_result';
+        data.data.data = collect_connection_result_data();
+    } else if (data.data.title.includes('Anfrage')) {
+        data.type = 'connection_data_request';
+        data.data.data = collect_connection_request_data();
     }
     return data;
 }
 
 function collect_connection_request_data() {
     console.log('collect_connection_request_data');
+
     const data = {
         "journey_start": get_value_from_element('.connection .conSummaryDep'),
+        "journey_start_error": get_value_from_element('#errormsg_S'),
         'journey_target' : get_value_from_element('.connection .conSummaryArr'),
+        "journey_target_error": get_value_from_element('#errormsg_Z'),
         'time' :
             get_value_from_element('.connection .conSummaryTime')
             .replaceAll('\n','')
             .replace('ab: ', ''),
         'date' : get_value_from_element('#tp_overview_headline_date'),
     };
+    if (data.journey_start_error) {
+        document.querySelector('[name=REQ0JourneyStopsS0K]').scrollIntoView();
+    }
+    if (data.journey_target_error) {
+        document.querySelector('[name=REQ0JourneyStopsZ0G]').scrollIntoView();
+    }
     return data;
 }
 
@@ -299,9 +374,32 @@ function search_connection_duration(search_options) {
 
 
 
+function dev_create_button() {
+    console.info('dev_create_button...');
+    const button_el = document.createElement('button');
+    button_el.textContent = 'send ping';
+    button_el.addEventListener('click', () => {
+        const message = 'dev Button PING';
+        console.info(`window.top.postMessage '${message}'`);
+        window.top.postMessage(message, '*');
+    });
+    button_el.classList.add('dev_button');
+    // button_el.classList.add('v-btn');
+    // button_el.classList.add('v-btn--is-elevated');
+    // button_el.classList.add('v-btn--has-bg');
+    // button_el.classList.add('theme--light');
+    // button_el.classList.add('v-size--default');
+    // button_el.classList.add('secondary');
+    button_el.style.position = 'fixed';
+    button_el.style.top = '0.5em';
+    button_el.style.right = '0.5em';
+    button_el.style.zIndex = '10000';
+    document.body.appendChild(button_el)
+    console.info('button_el', button_el);
+    return button_el;
+}
 
-
-
+dev_create_button();
 
 
 
