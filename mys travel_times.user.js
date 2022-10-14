@@ -1,5 +1,7 @@
 // ==UserScript==
 // @name     MYS & bahn.de - travel times
+// @author s-light.eu (Stefan Krüger)
+// @homepageURL https://github.com/s-light/mys-mentor-innen__mod
 // @version  0.3.0
 // @grant    none
 // @namespace   https://github.com/s-light
@@ -9,20 +11,16 @@
 // ==/UserScript==
 
 
-// console.clear();
-// console.info('******************************************');
-// window.addEventListener('load', (event) => {
-//      console.info('All resources finished loading!', event);
-window.addEventListener('load', () => {
-    // console.info('All resources finished loading.');
-    start_main_script();
-});
-
-
 
 const base_url = 'https://prod.mys-mentor-innen.de/mentor/*';
 const target_url = 'https://reiseauskunft.bahn.de/';
-// let request_frame = null;
+
+
+try {
+    start_main_script();
+} catch (e) {
+    console.warn(e);
+}
 
 function start_main_script() {
     console.info(
@@ -31,12 +29,32 @@ function start_main_script() {
     );
     console.log('location.host', location.host);
     // const app = get_vue_app_instance(document);
-    add_css();
+    // add_css();
     prepare_iframe();
     // wait until list is loaded...
     window.setTimeout(prepare_hackdays, 2000);
     // prepare_hackdays();
     // add_search_button();
+
+    window.addEventListener ("message", (event) => {
+        console.log('event', event);
+        console.log('event.origin', event.origin);
+        // Do we trust the sender of this message?
+        if (event.origin === target_url) {
+            request_received(event);
+            // event.source is window.opener
+            // event.data is "hello there!"
+            // Assuming you've verified the origin of the received message (which
+            // you must do in any case), a convenient idiom for replying to a
+            // message is to call postMessage on event.source and provide
+            // event.origin as the targetOrigin.
+            // event.source.postMessage(
+            //     "hi there yourself!  the secret response is: rheeeeet!",
+            //     event.origin
+            // );
+            // request_frame_message_received
+        }
+    });
 
     console.info(
         'all user scripting done.\n' +
@@ -113,7 +131,7 @@ function hackday_add_search_button(hackday) {
     let button_el = hackday.status_el.querySelector('.search');
     // console.log('button_el', button_el);
     if (!button_el) {
-        hackday.status_el.appendChild(create_search_button((event) => {
+        hackday.status_el.appendChild(create_search_button(() => {
             find_hackday_connection_duration(hackday);
         }));
     }
@@ -179,7 +197,7 @@ function search_connection_duration(search_options) {
 
 function prepare_iframe() {
     console.info('prepare_iframe...');
-    const main__wrap_el = document.querySelector(".v-main__wrap")
+    const main__wrap_el = document.querySelector(".v-main__wrap");
     const el = document.createElement('iframe');
     el.id = 'request_frame';
     el.classList.add('request_frame');
@@ -191,27 +209,30 @@ function prepare_iframe() {
     main__wrap_el.appendChild(el);
 }
 
-function start_frame_script(frame_window, frame_document) {
-    console.info(
-        'frame - init script\n',
-        'frame_window',
-        frame_window,
-        '\n',
-        'frame_document',
-        frame_document
-    );
-    try {
-        // following fails do to
-        // DOMException: Permission denied to access property "addEventListener" on cross-origin object
-        //console.log('frame_window.addEventListener ("message", (event)...');
-        //frame_window.addEventListener("message", (event) => {
-        //    console.log('frame_window - event', event);
-        //});
-        console.log('search for elements', frame_window.querySelector(''));
-    } catch (e) {
-        console.warn(e);
-    }
-    // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
-    // frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
-    console.info('frame - init script done.\n\n');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function add_css() {
+    console.groupCollapsed('add_css');
+    let modstyles = `
+    /* ***** css tweaks ***** */
+
+    /* ***** css tweaks end ***** */
+    `;
+    add_styles(modstyles);
+    console.groupEnd();
 }

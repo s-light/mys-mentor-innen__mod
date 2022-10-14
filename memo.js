@@ -1,23 +1,25 @@
-// alternative way:
-// https://stackoverflow.com/a/69466883/574981
-// access VUE instance directly
-// const app = document.querySelector('[app-data]').__vue__;
-// or saver way
-// const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue__).__vue__
-// const state = app.$store.state
-// if ever switched to VUE3 use
-// const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue_app__).__vue_app__
-// const state = app.config.globalProperties.$store.state
-
-// more on vuex store debugging
-// https://www.damianmullins.com/logging-vuex-actions-and-mutations-in-the-wild/
 
 // find all hackdays
 // for (const hd_id of state.appointment.allIds) {console.log(state.appointment.byId[hd_id])}
 
-
 // maybe use this to manipulate data table?
 // https://forum.vuejs.org/t/innerhtml-compilation-vue-2/8780/8?u=s-light
+
+
+
+
+
+// console.clear();
+// console.info('******************************************');
+// window.addEventListener('load', (event) => {
+//      console.info('All resources finished loading!', event);
+window.addEventListener('load', () => {
+    // console.info('All resources finished loading.');
+    start_main_script();
+});
+
+
+
 
 
     // setup iframe message handler
@@ -149,34 +151,27 @@ function start_frame_script(frame_window, frame_document) {
 
 
 
-
-
-
-function get_vue_app_instance(doc) {
-    let app = null;
+function start_frame_script(frame_window, frame_document) {
+    console.info(
+        'frame - init script\n',
+        'frame_window',
+        frame_window,
+        '\n',
+        'frame_document',
+        frame_document
+    );
     try {
-        // const app = Array.from(document.querySelectorAll('*')).find(e => e.__vue__).__vue__;
-        const doc_all_el = doc.querySelectorAll('*');
-        console.log('doc_all_el', doc_all_el);
-        console.log('Array.from', Array.from);
-        console.log('Array.find', Array.find);
-        const doc_all_el_array = Array.from(doc_all_el);
-        console.log('doc_all_el_array', doc_all_el_array);
-        const find_result = doc_all_el_array.find(e => e.__vue__);
-        console.log('find_result', find_result);
-        app = find_result.__vue__;
-        console.log('vue.js app', app);
+        // following fails do to
+        // DOMException: Permission denied to access property "addEventListener" on cross-origin object
+        //console.log('frame_window.addEventListener ("message", (event)...');
+        //frame_window.addEventListener("message", (event) => {
+        //    console.log('frame_window - event', event);
+        //});
+        console.log('search for elements', frame_window.querySelector(''));
     } catch (e) {
         console.warn(e);
     }
-    try {
-        app = doc.querySelector('[app-data]').__vue__;
-        console.log('doc.querySelector("[app-data]").__vue__', app);
-    } catch (e) {
-        console.warn(e);
-    }
-    if (!app) {
-        console.warn('app instance not found.', e);
-    }
-    return app;
+    // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
+    // frame_window.window.top.postMessage("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
+    console.info('frame - init script done.\n\n');
 }

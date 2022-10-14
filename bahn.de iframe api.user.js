@@ -1,5 +1,7 @@
 // ==UserScript==
 // @name     bahn.de iframe api
+// @author s-light.eu (Stefan Krüger)
+// @homepageURL https://github.com/s-light/mys-mentor-innen__mod
 // @version  0.1.0
 // @grant    none
 // @allFrames true
@@ -10,11 +12,11 @@
 
 
 // window.addEventListener('load', () => {
-//     start_main_script();
+//     setup_bahn_de_iframe_api();
 // });
 
 try {
-    start_main_script();
+    setup_bahn_de_iframe_api();
 } catch (e) {
     console.warn(e);
 }
@@ -22,7 +24,7 @@ try {
 
 const target_url = 'https://reiseauskunft.bahn.de/';
 
-function start_main_script() {
+function setup_bahn_de_iframe_api() {
     console.info(
         '******************************************' + '\n' +
         'bahn.de iframe api'
@@ -64,6 +66,14 @@ function request_received(event) {
 }
 
 
+
+
+
+
+
+
+
+
 function send_current_data() {
     const data = collect_current_data(document);
     // console.log("start_frame_script - frame_window.window.top.postMessage - PING FROM FRAME!!");
@@ -71,15 +81,31 @@ function send_current_data() {
         'type': 'connection_data',
         'data': data
     };
+    console.log('message_obj', message_obj);
     const message_data = JSON.stringify(message_obj);
     window.top.postMessage(message_data);
 }
 
 function collect_current_data() {
-    console.log('collect query result data');
+    console.log('collect_current_data');
     const data = {
         'title': get_value_from_element('title'),
-        'query_result': false,
+        'query_result': null,
+        'data': null,
+    };
+    if (data.title.includes('Auskunft')) {
+        data.query_result = true;
+        data.data = collect_connection_result_data();
+    } else if (data.title.includes('Anfrage')) {
+        data.query_result = false;
+        data.data = collect_connection_request_data();
+    }
+    return data;
+}
+
+function collect_connection_request_data() {
+    console.log('collect_connection_request_data');
+    const data = {
         "journey_start": get_value_from_element('.connection .conSummaryDep'),
         'journey_target' : get_value_from_element('.connection .conSummaryArr'),
         'time' :
@@ -87,36 +113,48 @@ function collect_current_data() {
             .replaceAll('\n','')
             .replace('ab: ', ''),
         'date' : get_value_from_element('#tp_overview_headline_date'),
+    };
+    return data;
+}
+
+function collect_connection_result_data() {
+    console.log('collect_connection_result_data');
+    const data = {
+        "journey_start": get_value_from_element('.connection .conSummaryDep'),
+        'journey_target' : get_value_from_element('.connection .conSummaryArr'),
+        'time' :
+            get_value_from_element('.connection .conSummaryTime')
+            .replaceAll('\n','')
+            .replace('ab:', '')
+            .trim(),
+        'date' : get_value_from_element('#tp_overview_headline_date'),
         'results' : [],
     };
-    if (data.title.includes('Auskunft')) {
-        data.query_result = true;
-    }
     for (let connection of document.querySelectorAll('.scheduledCon .overviewConnection')) {
         const connection_data = {
             'duration': 0,
             'changes': 0,
         };
-        let con_duration = connection.querySelector('conTimeChanges .duration');
+        let con_duration = connection.querySelector('.conTimeChanges .duration');
         if (con_duration) {
             connection_data.duration = con_duration.innerText.replace('|', '').trim();
         }
-        let con_chg = connection.querySelector('conTimeChanges .changes');
+        let con_chg = connection.querySelector('.conTimeChanges .changes');
         if (con_chg) {
             connection_data.changes = con_chg.innerText.replace('Umstiege', '');
         }
-        data.results.append(connection_data);
+        data.results.push(connection_data);
     }
     return data;
 }
 
 function get_value_from_element(selector) {
-    let result = null;
+    let result = '';
     const el = document.querySelector(selector);
     if (el) {
         if (el.nodeName === "INPUT") {
             result = el.value;
-        } else if (el.nodeName === "TITLE") {
+        } else if (["TITLE", "DIV", "SPAN"].includes(el.nodeName)) {
             result = el.innerText.trim();
         } else {
             console.warn(`Node Type '${el.nodeName}' not implemented.`);
@@ -124,6 +162,15 @@ function get_value_from_element(selector) {
     }
     return result;
 }
+
+
+
+
+
+
+
+
+
 
 
 

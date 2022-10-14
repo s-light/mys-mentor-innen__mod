@@ -1,0 +1,29 @@
+/*
+==UserCSS==
+@name     MYS style mods
+@author s-light.eu (Stefan Krüger)
+@match https://prod.mys-mentor-innen.de/mentor/*
+@match https://reiseauskunft.bahn.de/*
+@downloadURL https://s-light.github.io/mys-mentor-innen__mod/styles.user.js
+@version          1.0
+==/UserCSS==
+*/
+
+.request_frame {
+    display: block;
+    position: fixed;
+    right: 0;
+    z-index: 200;
+    width: 20vw;
+    height: 15vw;
+    top: 4em;
+    background: hsla(191.3, 42.1%, 22.4%, 0.11);
+}
+
+.v-application .mt-12 {
+	margin-top: 0px !important;
+}
+
+.v-application .mt-8 {
+	margin-top: 0px !important;
+}
