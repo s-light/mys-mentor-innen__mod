@@ -42,6 +42,23 @@ function parse_date(date_string) {
     return date
 }
 
+function duration_parse(duration_string) {
+    //console.log('duration_parse', duration_string);
+    const RegExpNamedCaptureGroups = /(?<hours>[0-9]{2})h (?<minutes>[0-9]{4})min/;
+    const reResult = RegExpNamedCaptureGroups.exec(duration_string);
+    //console.log(reResult);
+    const duration = (
+        (reResult.groups.hours * 60)
+        + reResult.groups.minutes
+    );
+    return duration
+}
+
+function duration_format(duration) {
+    const duration_string = `${Math.trunc(duration / 60)}h ${duration % 60}min`
+    return duration_string;
+}
+
 
 
 function add_styles(styles_string) {

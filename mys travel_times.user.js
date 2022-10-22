@@ -120,14 +120,14 @@ function get_hackdays() {
     return hackday_list;
 }
 
-function hackday_add_duration(hackday, duration) {
-    let duration_el = hackday.status_el.querySelector('.duration');
-    if (!duration_el) {
-        duration_el = document.createElement('div');
-        duration_el.classList.append('duration');
-        hackday.status_el.appendChild(duration_el);
+function hackday_add_stats(hackday, stats) {
+    let stats_el = hackday.status_el.querySelector('.stats');
+    if (!stats_el) {
+        stats_el = document.createElement('div');
+        stats_el.classList.append('stats');
+        hackday.status_el.appendChild(stats_el);
     }
-    duration_el.textContent = `${duration}h`;
+    stats_el.textContent = duration_format(stats.average_duration);
 }
 
 function hackday_add_search_button(hackday) {
@@ -152,15 +152,20 @@ function find_hackday_connection_duration(hackday) {
         target: `${hackday.place}, ${hackday.school}`,
         start_date: travel_date,
     };
-    const duration = search_connection_duration(search_options);
-    hackday_add_duration(hackday, duration);
+    const stats = search_connection_stats(search_options);
+    hackday_add_stats(hackday, stats);
 }
 
 
 
-function search_connection_duration(search_options) {
-    console.group('search_connection_duration');
-    let duration = -1;
+function search_connection_stats(search_options) {
+    console.group('search_connection_stats');
+    let stats = = {
+        'average_duration': -1,
+        'average_changes': -1,
+        'smallest_duration': 1440,
+        'smallest_changes': 100,
+    };
     const req_data = {
         'form_fill' : {
             'REQ0JourneyStopsS0G': search_options.start,
@@ -170,10 +175,10 @@ function search_connection_duration(search_options) {
             'REQ0JourneyTime': '08:00',
         }
     };
-    send_bahn_iframe_api_request('search_connection', req_data);
+    stats = send_bahn_iframe_api_request('search_connection', req_data);
     // TODO: wait for result
     console.groupEnd();
-    return duration;
+    return stats;
 }
 
 
@@ -182,14 +187,14 @@ function search_connection_duration(search_options) {
 
 async function send_bahn_iframe_api_request(req_type, req_data) {
     console.log('send_bahn_iframe_api_request');
-    console.log('req_type', req_type);
-    console.log('req_data', req_data);
+    // console.log('req_type', req_type);
+    // console.log('req_data', req_data);
     const request_frame = document.querySelector('#request_frame');
-    console.log('request_frame', request_frame);
+    // console.log('request_frame', request_frame);
     if (req_type == 'search_connection') {
         // reload search mask
         // wait until load event has fired..
-        console.log('trigger reload and wait...');
+        // console.log('trigger reload and wait...');
         await createPromiseFromDomEvent(
             request_frame,
             'load',
@@ -199,66 +204,23 @@ async function send_bahn_iframe_api_request(req_type, req_data) {
         );
         console.log('reload finished.');
     }
+
     console.log('wait for message..');
-
-
-    await new Promise((resolve, reject) => {
-        const handleEvent = (event) => {
-            try {
-                const event_data = event.data;
-                console.log('event_data', event_data);
-                const message_type = event_data.data.type;
-                // console.log('message_type', message_type);
-                const message_data = event_data.data.data;
-                // console.log('message_data', message_data);
-                switch (message_type) {
-                    case 'connection_data_result': {
-                            // connection_data_result_received(message_data);
-                            window.removeEventListener('message', handleEvent);
-                            resolve(event_data);
-                    } break;
-                    case 'connection_data_request':
-                        // connection_data_request_received(message_data);
-                        console.log('connection_data_request');
-                    break;
-                    default:
-                        console.warn(`message handling for '${message_type}' not implemented.`);
-                }
-            } catch (e) {
-                console.warn('message malformed.', e);
-            }
-        };
-        window.addEventListener('message', handleEvent);
-        try {
+    await waitForMessageAnswer(
+        () => {
             const req_message = {
                 'data': {
                     'type': req_type,
                     'data': req_data,
                 }
             };
-            console.log('post message.', req_message);
+            // console.log('post message.', req_message);
             request_frame.contentWindow.postMessage(req_message, "*");
-            console.log('post message - done.');
-        } catch (err) {
-            reject(err);
+            // console.log('post message - done.');
         }
-    })
-    //
-    // await waitForMessageAnswer(
-    //     () => {
-    //         const req_message = {
-    //             'data': {
-    //                 'type': req_type,
-    //                 'data': req_data,
-    //             }
-    //         };
-    //         console.log('post message.', req_message);
-    //         request_frame.contentWindow.postMessage(req_message, "*");
-    //         console.log('post message - done.');
-    //     }
-    // )
+    )
     .then((event_data) => {
-        console.log('got event_data', event_data);
+        // console.log('got event_data', event_data);
         const message_type = event_data.data.type;
         const message_data = event_data.data.data;
         switch (message_type) {
@@ -277,7 +239,26 @@ async function send_bahn_iframe_api_request(req_type, req_data) {
     })
     .then((result_list) => {
         // we have a result list
-        console.log('result_list', result_list);
+        // console.log('result_list', result_list);
+        const result_stats = {
+            'average_duration': -1,
+            'average_changes': -1,
+            'smallest_duration': 1440,
+            'smallest_changes': 100,
+        }
+        for (const connection_data of result_list) {
+            result_stats.average_duration += connection_data.duration;
+            result_stats.average_changes += connection_data.changes;
+            if (connection_data.duration < result_stats.smallest_duration) {
+                result_stats.smallest_duration = connection_data.duration;
+            }
+            if (connection_data.changes < result_stats.smallest_changes) {
+                result_stats.smallest_changes = connection_data.changes;
+            }
+        }
+        result_stats.average_duration = result_stats.average_duration / result_list.length;
+        result_stats.average_changes = result_stats.average_changes / result_list.length;
+        return result_stats;
     })
     .catch((message_data) => {
         console.log('error: we have message_data..', message_data);
@@ -397,9 +378,8 @@ function action_add(type, data=null, check=null, then=null) {
 
 
 
-// https://stackoverflow.com/a/58332058/574981
 function waitForMessageAnswer(run) {
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const handleEvent = (event) => {
             try {
                 const event_data = event.data;
@@ -419,7 +399,8 @@ function waitForMessageAnswer(run) {
                         console.log('connection_data_request');
                     break;
                     default:
-                        console.warn(`message handling for '${message_type}' not implemented.`);
+                        const message = `message handling for '${message_type}' not implemented.`;
+                        console.warn(message);
                 }
             } catch (e) {
                 console.warn('message malformed.', e);
@@ -433,12 +414,6 @@ function waitForMessageAnswer(run) {
         }
     });
 }
-// usage
-// await createPromiseFromDomEvent(
-//     sourceBuffer,
-//     'update',
-//     () => sourceBuffer.remove(3, 10)
-// );
 
 
 

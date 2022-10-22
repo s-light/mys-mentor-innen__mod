@@ -154,7 +154,7 @@ function send_current_data() {
     const data = {
         data: collect_current_data(document)
     };
-    console.log('data', data);
+    // console.log('data', data);
     if (data.data.type == 'connection_data_result') {
         const post_result = window.top.postMessage(data, '*');
         // console.log('message posted.');
@@ -227,7 +227,9 @@ function collect_connection_result_data() {
         };
         let con_duration = connection.querySelector('.conTimeChanges .duration');
         if (con_duration) {
-            connection_data.duration = con_duration.innerText.replace('|', '').trim();
+            connection_data.duration = duration_parse(
+                con_duration.innerText.replace('|', '').trim()
+            );
         }
         let con_chg = connection.querySelector('.conTimeChanges .changes');
         if (con_chg) {
