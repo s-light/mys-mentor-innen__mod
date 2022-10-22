@@ -5,6 +5,7 @@
 // @homepageURL https://github.com/s-light/mys-mentor-innen__mod
 // @version  0.3.0
 // @grant    none
+// @inject-into userScript
 // @namespace   https://github.com/s-light
 // @require   https://s-light.github.io/mys-mentor-innen__mod/tools.js
 // @match https://prod.mys-mentor-innen.de/mentor/*
@@ -15,6 +16,8 @@
 
 const base_url = 'https://prod.mys-mentor-innen.de/mentor/*';
 const target_url = 'https://reiseauskunft.bahn.de';
+
+const action_queue = [];
 
 
 try {
@@ -37,7 +40,8 @@ function start_main_script() {
     window.setTimeout(prepare_hackdays, 2000);
     // prepare_hackdays();
     // add_search_button();
-    setup_message_receive();
+
+    // setup_message_receive();
 
     console.info(
         'all user scripting done.\n' +
@@ -176,21 +180,110 @@ function search_connection_duration(search_options) {
 
 
 
-function send_bahn_iframe_api_request(req_type, req_data) {
+async function send_bahn_iframe_api_request(req_type, req_data) {
     console.log('send_bahn_iframe_api_request');
     console.log('req_type', req_type);
     console.log('req_data', req_data);
     const request_frame = document.querySelector('#request_frame');
     console.log('request_frame', request_frame);
-    const req_message = {
-        'data': {
-            'type': req_type,
-            'data': req_data,
+    if (req_type == 'search_connection') {
+        // reload search mask
+        // wait until load event has fired..
+        console.log('trigger reload and wait...');
+        await createPromiseFromDomEvent(
+            request_frame,
+            'load',
+            () => {
+                request_frame.src = target_url;
+            }
+        );
+        console.log('reload finished.');
+    }
+    console.log('wait for message..');
+
+
+    await new Promise((resolve, reject) => {
+        const handleEvent = (event) => {
+            try {
+                const event_data = event.data;
+                console.log('event_data', event_data);
+                const message_type = event_data.data.type;
+                // console.log('message_type', message_type);
+                const message_data = event_data.data.data;
+                // console.log('message_data', message_data);
+                switch (message_type) {
+                    case 'connection_data_result': {
+                            // connection_data_result_received(message_data);
+                            window.removeEventListener('message', handleEvent);
+                            resolve(event_data);
+                    } break;
+                    case 'connection_data_request':
+                        // connection_data_request_received(message_data);
+                        console.log('connection_data_request');
+                    break;
+                    default:
+                        console.warn(`message handling for '${message_type}' not implemented.`);
+                }
+            } catch (e) {
+                console.warn('message malformed.', e);
+            }
+        };
+        window.addEventListener('message', handleEvent);
+        try {
+            const req_message = {
+                'data': {
+                    'type': req_type,
+                    'data': req_data,
+                }
+            };
+            console.log('post message.', req_message);
+            request_frame.contentWindow.postMessage(req_message, "*");
+            console.log('post message - done.');
+        } catch (err) {
+            reject(err);
         }
-    };
-    console.log('post message.', req_message);
-    request_frame.contentWindow.postMessage(req_message, "*");
-    console.log('post message - done.');
+    })
+    //
+    // await waitForMessageAnswer(
+    //     () => {
+    //         const req_message = {
+    //             'data': {
+    //                 'type': req_type,
+    //                 'data': req_data,
+    //             }
+    //         };
+    //         console.log('post message.', req_message);
+    //         request_frame.contentWindow.postMessage(req_message, "*");
+    //         console.log('post message - done.');
+    //     }
+    // )
+    .then((event_data) => {
+        console.log('got event_data', event_data);
+        const message_type = event_data.data.type;
+        const message_data = event_data.data.data;
+        switch (message_type) {
+            case 'connection_data_result':
+                const result_list = message_data.data.results;
+                return result_list;
+                break;
+            // case 'connection_data_request':
+            //     throw (message_data);
+            //     break;
+            default:
+                const message = `message handling for '${message_type}' not implemented.`;
+                console.warn(message);
+                throw message;
+        }
+    })
+    .then((result_list) => {
+        // we have a result list
+        console.log('result_list', result_list);
+    })
+    .catch((message_data) => {
+        console.log('error: we have message_data..', message_data);
+        // so here we have to wait for the next load event (the form got submitted by the user)
+        // return createPromiseFromDomEvent(request_frame,'load');
+    });
 }
 
 
@@ -198,21 +291,24 @@ function send_bahn_iframe_api_request(req_type, req_data) {
 
 
 
+
+
+
 function message_received(event) {
-    console.log('message_received', event);
+    // console.log('message_received', event);
     try {
         const event_data = event.data;
-        console.log('event_data', event_data);
+        // console.log('event_data', event_data);
         const message_type = event_data.data.type;
-        console.log('message_type', message_type);
+        // console.log('message_type', message_type);
         const message_data = event_data.data.data;
-        console.log('message_data', message_data);
+        // console.log('message_data', message_data);
         switch (message_type) {
             case 'connection_data_result':
                 connection_data_result_received(message_data);
                 break;
             case 'connection_data_request':
-                console.log('TODO: implement connection_data_request handling');
+                connection_data_request_received(message_data);
                 break;
             default:
                 console.warn(`message handling for '${message_type}' not implemented.`);
@@ -222,10 +318,20 @@ function message_received(event) {
     }
 }
 
+function connection_data_request_received(data) {
+    console.log('connection_data_request_received');
+    // console.log('data', data);
+    // console.log('TODO: implement connection_data_request handling');
+}
+
 function connection_data_result_received(data) {
     console.log('connection_data_result_received');
     console.log('data', data);
     console.warn('TODO: implement connection_data_result handling');
+    const result_list = data.data.results;
+    console.log('result_list', result_list);
+    // get last element
+    // action_queue[action_queue.length-1]
 }
 
 
@@ -242,6 +348,8 @@ function connection_data_result_received(data) {
 function prepare_iframe() {
     console.info('prepare_iframe...');
     const main__wrap_el = document.querySelector(".v-main__wrap");
+    const el_wrap = document.createElement('div');
+    el_wrap.classList.add('request_frame_wrapper');
     const el = document.createElement('iframe');
     el.id = 'request_frame';
     el.classList.add('request_frame');
@@ -251,7 +359,8 @@ function prepare_iframe() {
         // start_frame_script(el.contentWindow, el.contentDocument);
     });
     el.src = target_url;
-    main__wrap_el.appendChild(el);
+    el_wrap.appendChild(el);
+    main__wrap_el.appendChild(el_wrap);
 }
 
 
@@ -262,6 +371,98 @@ function prepare_iframe() {
 
 
 
+
+
+
+
+function action_add(type, data=null, check=null, then=null) {
+    const action = {
+        type: type,
+        data: data,
+        check: check,
+        then: then,
+    }
+    action_queue.push(action);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// https://stackoverflow.com/a/58332058/574981
+function waitForMessageAnswer(run) {
+    new Promise((resolve, reject) => {
+        const handleEvent = (event) => {
+            try {
+                const event_data = event.data;
+                // console.log('event_data', event_data);
+                const message_type = event_data.data.type;
+                // console.log('message_type', message_type);
+                const message_data = event_data.data.data;
+                // console.log('message_data', message_data);
+                switch (message_type) {
+                    case 'connection_data_result': {
+                            // connection_data_result_received(message_data);
+                            window.removeEventListener('message', handleEvent);
+                            resolve(event_data);
+                    } break;
+                    case 'connection_data_request':
+                        // connection_data_request_received(message_data);
+                        console.log('connection_data_request');
+                    break;
+                    default:
+                        console.warn(`message handling for '${message_type}' not implemented.`);
+                }
+            } catch (e) {
+                console.warn('message malformed.', e);
+            }
+        };
+        window.addEventListener('message', handleEvent);
+        try {
+            if (run) run();
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+// usage
+// await createPromiseFromDomEvent(
+//     sourceBuffer,
+//     'update',
+//     () => sourceBuffer.remove(3, 10)
+// );
+
+
+
+// https://stackoverflow.com/a/58332058/574981
+function createPromiseFromDomEvent (eventTarget, eventName, run) {
+    new Promise((resolve, reject) => {
+        const handleEvent = () => {
+            eventTarget.removeEventListener(eventName, handleEvent);
+            resolve();
+        };
+        eventTarget.addEventListener(eventName, handleEvent);
+        try {
+            if (run) run();
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+// usage
+// await createPromiseFromDomEvent(
+//     sourceBuffer,
+//     'update',
+//     () => sourceBuffer.remove(3, 10)
+// );
 
 
 

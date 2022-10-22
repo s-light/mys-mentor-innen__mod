@@ -29,20 +29,22 @@ const source_url = 'https://prod.mys-mentor-innen.de';
 const target_url = 'https://reiseauskunft.bahn.de/';
 
 function setup_bahn_de_iframe_api() {
-    console.info(
-        '******************************************' + '\n' +
-        'bahn.de iframe api'
-    );
-    console.log('location.host', location.host);
-    console.log('window.top === window.self', window.top === window.self);
+    console.info('setup');
+    // console.info(
+    //     '******************************************' + '\n' +
+    //     'bahn.de iframe api'
+    // );
+    // console.log('location.host', location.host);
+    // console.log('window.top === window.self', window.top === window.self);
     // add_css();
-    window.top.postMessage('PING from frame *.', '*');
+    // window.top.postMessage({data: 'PING from frame *.'}, '*');
     setup_message_receive();
     send_current_data();
-    console.info(
-        'all user scripting done.\n' +
-        '******************************************'
-    );
+    // console.info(
+    //     'all user scripting done.\n' +
+    //     '******************************************'
+    // );
+    // console.info('setup done');
 }
 
 
@@ -50,11 +52,11 @@ function setup_bahn_de_iframe_api() {
 function setup_message_receive() {
     // setup iframe message handler
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#examples
-    window.addEventListener ("message", (event) => {
-        console.log('event', event);
-        console.log('event.origin', event.origin);
-        console.log('event.source', event.source);
-        console.log('window.opener', window.opener);
+    window.addEventListener("message", (event) => {
+        // console.log('event', event);
+        // console.log('event.origin', event.origin);
+        // console.log('event.source', event.source);
+        // console.log('window.opener', window.opener);
         // Do we trust the sender of this message?
         if (
             (event.origin === source_url)
@@ -77,11 +79,11 @@ function message_received(event) {
     console.log('message_received', event);
     try {
         const event_data = event.data;
-        console.log('event_data', event_data);
+        // console.log('event_data', event_data);
         const message_type = event_data.data.type;
-        console.log('message_type', message_type);
+        // console.log('message_type', message_type);
         const message_data = event_data.data.data;
-        console.log('message_data', message_data);
+        // console.log('message_data', message_data);
         switch (message_type) {
             case 'search_connection':
                 req_search_connection(message_data)
@@ -95,10 +97,10 @@ function message_received(event) {
 }
 
 function req_search_connection(data) {
-    console.log('req_search_connection', data);
-    console.log('fill form:');
+    console.info('req_search_connection', data);
+    console.group('fill form:');
     for (const key of Object.keys(data.form_fill)) {
-        console.log(`fill '${key}'`);
+        console.log(`    '${key}'`);
         try {
             const el = document.querySelector(`[name=${key}]`);
             if (el) {
@@ -110,26 +112,33 @@ function req_search_connection(data) {
             console.warn(`form_fill failed on input '${key}': `, e);
         }
     }
-    // send form
-    try {
-        console.log(`send form..`);
-        // document.querySelector('[name=start]').click();
-        const submit_button = document.querySelector('[name=start]');
-        const click_result = submit_button.click();
-        console.log('click_result', click_result);
+    console.groupEnd();
 
-        // does not work.
-        // document.querySelector('[name=formular]').submit();
-        // or
-        // submitQuery();
+    // seems we need some small timeout for the click to work reliable...
+    function send_form() {
+        // send form
+        try {
+            console.log(`send form..`);
+            // document.querySelector('[name=start]').click();
+            const submit_button = document.querySelector('[name=start]');
+            submit_button.click();
+            // const click_result = submit_button.click();
+            // console.log('click_result', click_result);
 
-        // this reloads the page.
-        // so the send_current_data will get triggered..
-        // hopefully with the results ;-)
-    } catch (e) {
-        console.warn(`form_fill submit failed`, e);
+            // does not work.
+            // document.querySelector('[name=formular]').submit();
+            // or
+            // submitQuery();
+
+            // this reloads the page.
+            // so the send_current_data will get triggered..
+            // hopefully with the results ;-)
+        } catch (e) {
+            console.warn(`form_fill submit failed`, e);
+        }
     }
-    console.log(`done.`);
+    window.setTimeout(send_form, 100);
+    console.info(`req_search_connection done.`);
 }
 
 
@@ -146,14 +155,18 @@ function send_current_data() {
         data: collect_current_data(document)
     };
     console.log('data', data);
-    const post_result = window.top.postMessage(data, '*');
-    console.log('message posted.');
+    if (data.data.type == 'connection_data_result') {
+        const post_result = window.top.postMessage(data, '*');
+        // console.log('message posted.');
+    } else {
+        console.log('no message posted for now.. waiting for results first...');
+    }
     // const message_data_text = JSON.stringify(message_obj);
     // window.top.postMessage(message_data_text);
 }
 
 function collect_current_data() {
-    console.log('collect_current_data');
+    // console.log('collect_current_data');
     const data = {
         'type': 'connection_data',
         'data': {
@@ -172,7 +185,7 @@ function collect_current_data() {
 }
 
 function collect_connection_request_data() {
-    console.log('collect_connection_request_data');
+    // console.log('collect_connection_request_data');
 
     const data = {
         "journey_start": get_value_from_element('.connection .conSummaryDep'),
@@ -195,7 +208,7 @@ function collect_connection_request_data() {
 }
 
 function collect_connection_result_data() {
-    console.log('collect_connection_result_data');
+    // console.log('collect_connection_result_data');
     const data = {
         "journey_start": get_value_from_element('.connection .conSummaryDep'),
         'journey_target' : get_value_from_element('.connection .conSummaryArr'),
@@ -374,56 +387,31 @@ function search_connection_duration(search_options) {
 
 
 
-
-
-function dev_create_button() {
-    console.info('dev_create_button...');
-    const button_el = document.createElement('button');
-    button_el.textContent = 'send ping';
-    button_el.addEventListener('click', () => {
-        const message = 'dev Button PING';
-        console.info(`window.top.postMessage '${message}'`);
-        window.top.postMessage(message, '*');
-    });
-    button_el.classList.add('dev_button');
-    // button_el.classList.add('v-btn');
-    // button_el.classList.add('v-btn--is-elevated');
-    // button_el.classList.add('v-btn--has-bg');
-    // button_el.classList.add('theme--light');
-    // button_el.classList.add('v-size--default');
-    // button_el.classList.add('secondary');
-    button_el.style.position = 'fixed';
-    button_el.style.top = '0.5em';
-    button_el.style.right = '0.5em';
-    button_el.style.zIndex = '10000';
-    document.body.appendChild(button_el)
-    console.info('button_el', button_el);
-    return button_el;
-}
-
-dev_create_button();
-
-
-
-
-
-
-
-
-
-
-
-function parse_date(date_string) {
-    //console.log('parse_date', date_string);
-    //const RegExpNamedCaptureGroups = /(?<year>[0-9]{4})-(?<month>[0-9]{2})-(?<day>[0-9]{2})/
-    const RegExpNamedCaptureGroups = /(?<day>[0-9]{2}).(?<month>[0-9]{2}).(?<year>[0-9]{4})/;
-    const reResult = RegExpNamedCaptureGroups.exec(date_string);
-    //console.log(reResult);
-    const date = new Date(
-        reResult.groups.year,
-        // monthIndex = month - 1
-        reResult.groups.month - 1,
-        reResult.groups.day
-    );
-    return date
-}
+//
+//
+// function dev_create_button() {
+//     console.info('dev_create_button...');
+//     const button_el = document.createElement('button');
+//     button_el.textContent = 'send ping';
+//     button_el.addEventListener('click', () => {
+//         const message = 'dev Button PING';
+//         console.info(`window.top.postMessage '${message}'`);
+//         window.top.postMessage(message, '*');
+//     });
+//     button_el.classList.add('dev_button');
+//     // button_el.classList.add('v-btn');
+//     // button_el.classList.add('v-btn--is-elevated');
+//     // button_el.classList.add('v-btn--has-bg');
+//     // button_el.classList.add('theme--light');
+//     // button_el.classList.add('v-size--default');
+//     // button_el.classList.add('secondary');
+//     button_el.style.position = 'fixed';
+//     button_el.style.top = '0.5em';
+//     button_el.style.right = '0.5em';
+//     button_el.style.zIndex = '10000';
+//     document.body.appendChild(button_el)
+//     console.info('button_el', button_el);
+//     return button_el;
+// }
+//
+// dev_create_button();
